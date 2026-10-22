@@ -96,21 +96,31 @@ GRIS=$'\033[90m'
 COLORES_ESTADO=("$VERDE" "$NARANJA" "$ROJO")
 TEXTOS_ESTADO=("OK" "MEDIO" "ALTO")
 
-# Paleta para el logo (colores aleatorios al arrancar)
+# Paleta para la cabecera: los colores cambian solos con los segundos
 PALETA_LOGO=("$AZUL" "$VERDE" "$AMARILLO" "$CIAN" "$ROJO" \
              "$NARANJA" "$BLANCO" "$AZUL")
 
-color_aleatorio() {
-    local n=${#PALETA_LOGO[@]}
-    printf '%s' "${PALETA_LOGO[$((RANDOM % n))]}"
-}
+COLOR_LOGO=""
+COLOR_MODO=""
+COLOR_VER=""
+COLOR_DASH=""
+COLOR_RAYO=""
+SEG_COLORES=""
 
-colores_aleatorios() {
-    COLOR_LOGO=$(color_aleatorio)
-    COLOR_MODO=$(color_aleatorio)
-    COLOR_VER=$(color_aleatorio)
-    COLOR_DASH=$(color_aleatorio)
-    COLOR_RAYO=$(color_aleatorio)
+# Elige los colores de la cabecera a partir del segundo actual. Solo recalcula
+# cuando cambia el segundo, así no parpadea a 4 fps ni se queda fijo al arrancar.
+actualizar_colores_hora() {
+    local seg n
+    printf -v seg '%(%S)T' -1
+    seg=$((10#$seg))
+    [ "$seg" = "$SEG_COLORES" ] && return
+    SEG_COLORES=$seg
+    n=${#PALETA_LOGO[@]}
+    COLOR_LOGO=${PALETA_LOGO[$(( seg % n ))]}
+    COLOR_MODO=${PALETA_LOGO[$(( (seg + 2) % n ))]}
+    COLOR_VER=${PALETA_LOGO[$(( (seg + 4) % n ))]}
+    COLOR_DASH=${PALETA_LOGO[$(( (seg + 1) % n ))]}
+    COLOR_RAYO=${PALETA_LOGO[$(( (seg + 6) % n ))]}
 }
 
 # En modo simple sin TTY (tuberías) no se emiten colores; tampoco con NO_COLOR
@@ -533,34 +543,38 @@ bar_cell_var() {
     fi
 }
 
-# Fotogramas del corredor: 4 poses x 5 líneas (ancho 8)
-RUNNER=(
-"   o    "
-"  /|\   "
-"   |    "
-"  / \   "
-" /   \  "
+# Fotogramas del bicho rebotón: 4 poses x 6 líneas (cuerpo de 9 columnas)
+BICHO=(
+"         "
+"  ▄▄▄▄▄  "
+" █ o o █ "
+" █  w  █ "
+"  ▀▀▀▀▀  "
+"  ▁▁▁▁▁  "
 
-"    o   "
-"   /|/  "
-"    |   "
-"   / \  "
-"  /   \ "
+"  ▄▄▄▄▄  "
+" █ o o █ "
+" █  w  █ "
+" █     █ "
+"  ▀▀▀▀▀  "
+"   ▁▁▁   "
 
-"   o    "
-"  /|\   "
-"   |    "
-"   | |  "
-"  /   \ "
+"         "
+"  ▄▄▄▄▄  "
+" █ - - █ "
+" █  w  █ "
+"  ▀▀▀▀▀  "
+"   ▁▁▁   "
 
-"    o   "
-"   /|\  "
-"    |\  "
-"   / \  "
-"  /   \ "
+"         "
+"         "
+" ▄▄▄▄▄▄▄ "
+" █ ^ ^ █ "
+" ▀▀▀▀▀▀▀ "
+" ▁▁▁▁▁▁▁ "
 )
 
-RUNNER_FRAME=0
+BICHO_FRAME=0
 ANIM_TICK=0
 
 actualizar_paso() {
@@ -569,31 +583,31 @@ actualizar_paso() {
     [ "$ESTADO_GLOBAL" -eq 2 ] && cada=1
     ANIM_TICK=$(( ANIM_TICK + 1 ))
     if [ $(( ANIM_TICK % cada )) -eq 0 ]; then
-        RUNNER_FRAME=$(( (RUNNER_FRAME + 1) % 4 ))
+        BICHO_FRAME=$(( (BICHO_FRAME + 1) % 4 ))
     fi
 }
 
-# runner_line_var <linea 0..4> -> bloque de 12 columnas en RUNLINE
-runner_line_var() {
-    local idx="$1" art speed="" sweat=" " pos cabeza="o"
-    art="${RUNNER[$((RUNNER_FRAME * 5 + idx))]}"
-    printf -v art '%-8s' "$art"
+# bicho_line_var <linea 0..5> -> bloque de 12 columnas en LINEA_BICHO
+bicho_line_var() {
+    local idx="$1" art speed="" sweat=" " pos ojos="o o" boca="w"
+    art="${BICHO[$((BICHO_FRAME * 6 + idx))]}"
 
-    # La cara también cuenta: tranquilo, concentrado o exhausto
-    [ "$ESTADO_GLOBAL" -eq 1 ] && cabeza="O"
-    [ "$ESTADO_GLOBAL" -eq 2 ] && cabeza="x"
-    art="${art/o/$cabeza}"
+    # La cara cuenta el estado: feliz, concentrado o entrando en pánico
+    [ "$ESTADO_GLOBAL" -eq 1 ] && { ojos="O O"; boca="-"; }
+    [ "$ESTADO_GLOBAL" -eq 2 ] && { ojos="> <"; boca="O"; }
+    art="${art/o o/$ojos}"
+    art="${art/w/$boca}"
 
     if [ "$ESTADO_GLOBAL" -ge 1 ]; then
         case "$idx" in
-            1|3) speed="»" ;;
+            2|3) speed="»" ;;
         esac
         [ "$ESTADO_GLOBAL" -eq 2 ] && speed="»»"
     fi
-    printf -v speed '%-3s' "$speed"
+    printf -v speed '%-2s' "$speed"
 
     if [ "$ESTADO_GLOBAL" -eq 2 ]; then
-        pos=$(( (ANIM_TICK / 2) % 3 ))
+        pos=$(( (ANIM_TICK / 2) % 4 ))
         if [ "$idx" -eq "$pos" ]; then
             sweat="'"
         elif [ "$idx" -eq $((pos + 1)) ]; then
@@ -601,41 +615,45 @@ runner_line_var() {
         fi
     fi
 
-    RUNLINE="${COLOR_ESTADO}${speed}${RESET}${COLOR_ESTADO}${BOLD}${art}${RESET}${CIAN}${sweat}${RESET}"
+    LINEA_BICHO="${COLOR_ESTADO}${speed}${RESET}${COLOR_ESTADO}${BOLD}${art}${RESET}${CIAN}${sweat}${RESET}"
 }
 
 # ---------------------------------------------------------------------------
 # Dibujo del frame completo
 # ---------------------------------------------------------------------------
 draw_header() {
-    local w up now
+    local w up now largo
     w=$WIDTH
     printf -v now '%(%H:%M:%S)T' -1
     up=$(read_uptime)
-    sep_var $((w - 1))
+    actualizar_colores_hora
 
+    # Separadores cortos: no hacen falta 80 columnas de raya
+    largo=$(( w - 1 ))
+    [ "$largo" -gt 40 ] && largo=40
+
+    sep_var "$largo"
     printf '%s%s%s\n' "$COLOR_DASH" "$SEPARADOR" "$RESET"
     if [ "$w" -ge 70 ]; then
-        printf ' %s%sDASH4FUN%s %s| %sMODO DIVERSIÓN%s %s| %sV %s%s %s| %s%s%s %s| %sup %s%s %s| %s%s hilos%s\n' \
+        printf ' %s%sDASH4FUN%s %s| %sMODO DIVERSIÓN%s %s| %sV %s%s %s| %s%s%s %s| %sup %s%s\n' \
             "$COLOR_LOGO" "$BOLD" "$RESET" \
             "$COLOR_DASH" "$COLOR_MODO" "$RESET" \
             "$COLOR_DASH" "$COLOR_VER" "$VERSION" "$RESET" \
             "$COLOR_DASH" "$BLANCO" "$now" "$RESET" \
-            "$COLOR_DASH" "$DIM" "$up" "$RESET" \
-            "$COLOR_DASH" "$CIAN" "$CPUS" "$RESET"
+            "$COLOR_DASH" "$DIM" "$up" "$RESET"
     elif [ "$w" -ge 52 ]; then
-        printf ' %s%sDASH4FUN%s %s| %sV %s%s %s| %s%s%s %s| %sup %s%s %s| %s%s hilos%s\n' \
+        printf ' %s%sDASH4FUN%s %s| %sV %s%s %s| %s%s%s %s| %sup %s%s\n' \
             "$COLOR_LOGO" "$BOLD" "$RESET" \
             "$COLOR_DASH" "$COLOR_VER" "$VERSION" "$RESET" \
             "$COLOR_DASH" "$BLANCO" "$now" "$RESET" \
-            "$COLOR_DASH" "$DIM" "$up" "$RESET" \
-            "$COLOR_DASH" "$CIAN" "$CPUS" "$RESET"
+            "$COLOR_DASH" "$DIM" "$up" "$RESET"
     else
         printf ' %s%sDASH4FUN%s %s| %s%s%s %s| %sup %s%s\n' \
             "$COLOR_LOGO" "$BOLD" "$RESET" \
             "$COLOR_DASH" "$BLANCO" "$now" "$RESET" \
             "$COLOR_DASH" "$DIM" "$up" "$RESET"
     fi
+    sep_var "$largo"
     printf '%s%s%s\n' "$COLOR_DASH" "$SEPARADOR" "$RESET"
     printf ' %sAUTO-REFRESCO:%s %s%ss%s  %s|%s  %sCTRL+C:%s Salir%s\n\n' \
         "$DIM" "$RESET" "$CIAN" "$INTERVAL" "$RESET" "$DIM" "$RESET" "$CIAN" "$RESET" "$RESET"
@@ -655,21 +673,19 @@ read_uptime() {
 }
 
 draw_panel() {
-    local area_rows=$(( BAR_H + 3 )) runner_top i r linea celda
-    local show_runner=0
-    runner_top=$(( BAR_H - 4 ))   # el muñeco apoya los pies en la base de las barras
+    local area_rows=$(( BAR_H + 3 )) bicho_top i r linea celda
+    local show_bicho=0
+    bicho_top=$(( BAR_H - 5 ))   # el bicho apoya la sombra en la base de las barras
     if [ "$WIDTH" -ge 58 ] && [ "$HEIGHT" -ge 20 ]; then
-        show_runner=1
+        show_bicho=1
     fi
 
     for (( r=0; r<area_rows; r++ )); do
         linea="  "
-        if [ "$show_runner" -eq 1 ]; then
-            if [ "$r" -ge "$runner_top" ] && [ "$r" -lt $((runner_top + 5)) ]; then
-                runner_line_var $((r - runner_top))
-                linea+="$RUNLINE"
-            elif [ "$r" -eq $((BAR_H + 1)) ]; then
-                linea+="${DIM}────────────${RESET}"
+        if [ "$show_bicho" -eq 1 ]; then
+            if [ "$r" -ge "$bicho_top" ] && [ "$r" -lt $((bicho_top + 6)) ]; then
+                bicho_line_var $((r - bicho_top))
+                linea+="$LINEA_BICHO"
             else
                 linea+="            "
             fi
