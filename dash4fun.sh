@@ -24,7 +24,7 @@ set -u
 # ---------------------------------------------------------------------------
 # Configuración por defecto (sobrescribible por variables de entorno)
 # ---------------------------------------------------------------------------
-VERSION="1.3"
+VERSION="1.4"
 INTERVAL="${DASH4FUN_INTERVAL:-1}"   # segundos entre muestras de hardware
 MODE="${DASH4FUN_MODE:-full}"        # full | simple
 ONCE=0
@@ -129,27 +129,52 @@ GRADIENTE=(
     $'\033[38;5;131m'   # 100 %
 )
 
-# Frases de Dashy según el estado. Rotan cada pocos segundos para no repetirse.
+# Frases de Dashy según el estado, todas en gerundio. Rotan cada 8 segundos.
 FRASES_DASHY_0=(
-    "Dashy toma el sol en una mañana de primavera"
-    "Dashy duerme la siesta: todo va fino"
-    "Dashy se balancea tranquilo, sin prisa"
+    "Dashy está durmiendo una tranquila siesta"
+    "Dashy está tomando el sol sin ninguna prisa"
+    "Dashy está meditando al ritmo del ventilador"
+    "Dashy está contando ovejas en binario"
+    "Dashy está leyendo el manual de instrucciones"
+    "Dashy está preparando un café para dos"
+    "Dashy está mirando las nubes desde la CPU"
+    "Dashy está ronroneando como un gato feliz"
+    "Dashy está planeando no hacer nada en todo el día"
 )
 FRASES_DASHY_1=(
-    "Dashy trota: el PC va cómodo"
-    "Dashy se estira: todo bajo control"
-    "Dashy mira el horizonte, sin sudar"
+    "Dashy está trotando: el PC va cómodo"
+    "Dashy está estirando las patitas sin sudar"
+    "Dashy está vigilando los núcleos con calma"
+    "Dashy está silbando mientras ordena los cables"
+    "Dashy está haciendo malabares con cuatro hilos"
+    "Dashy está tomando nota de todo, sin prisa"
+    "Dashy está calentando motores, pero solo un poco"
+    "Dashy está dando un paseo por la memoria RAM"
+    "Dashy está ensayando su discurso de calma"
 )
 FRASES_DASHY_2=(
-    "Dashy se abanica, pero mantiene el tipo"
-    "Dashy mira el reloj: esto se calienta"
-    "Dashy aprieta el paso: el PC pide ayuda"
+    "Dashy está abanicando la CPU como un loco"
+    "Dashy está pidiendo refuerzos al gobernador"
+    "Dashy está sudando la gota gorda, pero sonríe"
+    "Dashy está negociando una tregua con el kernel"
+    "Dashy está subiendo el ritmo de la ventilación"
+    "Dashy está haciendo sentadillas para no rendirse"
+    "Dashy está mirando el reloj cada dos segundos"
+    "Dashy está abriendo la ventana por si acaso"
+    "Dashy está pidiendo calma a los procesos"
+    "Dashy está cerrando pestañas de Chrome a toda prisa"
 )
 FRASES_DASHY_3=(
-    "Dashy entra en pánico y busca el extintor"
-    "Dashy abanica el disipador como puede"
-    "Dashy chilla: ¡esto va a tope!"
-    "Dashy ha llamado a los bomberos"
+    "Dashy está corriendo en busca del extintor"
+    "Dashy está rezando todas sus oraciones al kernel Linux"
+    "Dashy está gritando: ¡que alguien baje el voltaje!"
+    "Dashy está lanzando cubitos de hielo al disipador"
+    "Dashy está llamando a los bomberos por si acaso"
+    "Dashy está bailando la danza de la refrigeración"
+    "Dashy está escribiendo su testamento en /tmp"
+    "Dashy está pidiendo auxilio al dios de los ventiladores"
+    "Dashy está considerando seriamente apagar el PC"
+    "Dashy está invocando a systemd para que le eche una mano"
 )
 
 COLOR_LOGO=""
@@ -200,6 +225,18 @@ pad_r() {
     [ "$n" -lt 0 ] && n=0
     printf -v relleno '%*s' "$n" ''
     printf '%s%s' "$t" "$relleno"
+}
+
+# Recorta un texto al ancho visible indicado y añade puntos suspensivos si sobra
+recortar_var() {
+    local t="$1" w="$2"
+    if [ "${#t}" -le "$w" ]; then
+        RECORTADA=$t
+    elif [ "$w" -le 1 ]; then
+        RECORTADA="…"
+    else
+        RECORTADA="${t:0:$((w-1))}…"
+    fi
 }
 
 # Deja en COLOR_PCT el color del gradiente para un porcentaje 0-100 (sin subproceso)
@@ -777,9 +814,12 @@ draw_panel() {
 }
 
 draw_status() {
-    local extra=""
-    [ -n "$PEOR_METRICA" ] && extra=" ($PEOR_METRICA)"
-    printf '  %s%s> %s%s%s\n' "$COLOR_ESTADO" "$BOLD" "$MENSAJE_ESTADO" "$extra" "$RESET"
+    local extra="" ancho
+    [ -n "$PEOR_METRICA" ] && [ "${WIDTH:-80}" -ge 64 ] && extra=" ($PEOR_METRICA)"
+    ancho=$(( ${WIDTH:-80} - 4 - ${#extra} ))
+    [ "$ancho" -lt 10 ] && ancho=10
+    recortar_var "$MENSAJE_ESTADO" "$ancho"
+    printf '  %s%s> %s%s%s\n' "$COLOR_ESTADO" "$BOLD" "$RECORTADA" "$extra" "$RESET"
 }
 
 draw_footer() {

@@ -6,7 +6,7 @@ verticales** y **Dashy**, un bicho rebotón que descansa en azul, trota en verde
 se concentra en naranja o entra en pánico (y suda) en rojo según cómo esté el
 equipo.
 
-![versión](https://img.shields.io/badge/versión-1.3-blue)
+![versión](https://img.shields.io/badge/versión-1.4-blue)
 ![licencia](https://img.shields.io/badge/licencia-GPL--3.0--or--later-green)
 
 ## Características
@@ -24,9 +24,9 @@ equipo.
 - **Dashy, el bicho animado**: cuatro poses de rebote (normal, estirado,
   antena ladeada y aplastado). En azul descansa, en verde trota, en naranja se
   concentra y en rojo entra en pánico y suda.
-- **Frases con humor**: Dashy va contando qué tal va el PC (“Dashy toma el sol
-  en una mañana de primavera”, “Dashy entra en pánico y busca el extintor”…).
-  Cambian cada 8 segundos.
+- **Frases con humor**: Dashy va contando qué tal va el PC en gerundio
+  (“Dashy está durmiendo una tranquila siesta”, “Dashy está rezando todas sus
+  oraciones al kernel Linux”…). Cambian cada 8 segundos.
 - **Cabecera viva**: el color del título va cambiando solo con los segundos, y
   los separadores son cortos. Sin contador de hilos.
 - **Números claros** encima de cada barra y etiqueta debajo, con redondeo
@@ -41,7 +41,7 @@ equipo.
 
 ```text
 ────────────────────────────────────────
- DASH4FUN | DASHY EN ACCIÓN | V 1.3 | 12:34:57 | up 2h 44m
+ DASH4FUN | DASHY EN ACCIÓN | V 1.4 | 12:34:57 | up 2h 44m
 ────────────────────────────────────────
  AUTO-REFRESCO: 1s  |  CTRL+C: Salir
 
@@ -60,9 +60,9 @@ equipo.
       ▁▁▁▁▁    ▂▂▂▂▂  █████  █████  █████  ░░░░░  █████
                 CPU   TEMP    RAM   LOAD    GPU   GTMP
                 CALMA  CALMA  CALMA  CALMA  CALMA  CALMA
-  > Dashy toma el sol en una mañana de primavera
+  > Dashy está durmiendo una tranquila siesta
 
- Ctrl+C para salir  |  dash4fun v1.3 — Dashy en acción
+ Ctrl+C para salir  |  dash4fun v1.4 — Dashy en acción
 ────────────────────────────────────────
 ```
 
