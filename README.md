@@ -2,22 +2,28 @@
 
 Monitor de recursos de terminal, en un único script Bash, con vocación de
 **pasar el rato mirándolo**: temperatura y carga de trabajo en **barras
-verticales** y un bicho rebotón que se pone feliz, serio o entra en pánico (y
-suda) según cómo esté el equipo.
+verticales** y **Dashy**, un bicho rebotón que se pone feliz, serio o entra en
+pánico (y suda) según cómo esté el equipo.
 
-![versión](https://img.shields.io/badge/versión-1.1-blue)
+![versión](https://img.shields.io/badge/versión-1.2-blue)
 ![licencia](https://img.shields.io/badge/licencia-GPL--3.0--or--later-green)
 
 ## Características
 
-- **Seis barras verticales**: uso de CPU, temperatura de CPU, RAM, carga del
-  sistema (`load avg` relativa a los núcleos), uso de GPU y temperatura de GPU.
-- **Color por estado**: verde por debajo del 60 % / 70 °C, naranja en el tramo
-  medio y rojo a partir del 85 % / 85 °C. Cada barra se colorea de forma
-  independiente; el bicho usa el peor estado global.
-- **Bicho animado**: cuatro poses de rebote (normal, estirado, parpadeo y
-  aplastado). En verde sonríe y rebota tranquilo; en naranja se concentra y
-  acelera; en rojo entra en pánico y suda.
+- **Seis barras verticales** de altura adaptable (8-16 celdas según la
+  terminal): uso de CPU, temperatura de CPU, RAM, carga del sistema (`load avg`
+  relativa a los núcleos), uso de GPU y temperatura de GPU.
+- **Gradiente de color continuo**: las barras pasan por verdes, amarillos,
+  naranjas y rojos según el porcentaje, con 21 pasos intermedios. Así el naranja
+  aparece de forma progresiva, no solo al cruzar un umbral.
+- **Porcentaje bien visible**: el valor de cada barra se muestra en negrita
+  encima; `LOAD` ahora también se expresa como % de núcleos ocupados.
+- **Dashy, el bicho animado**: cuatro poses de rebote (normal, estirado,
+  antena ladeada y aplastado). En verde sonríe y rebota tranquilo; en naranja se
+  concentra y acelera; en rojo entra en pánico y suda.
+- **Frases con humor**: Dashy va contando qué tal va el PC (“Dashy toma el sol
+  en una mañana de primavera”, “Dashy entra en pánico y busca el extintor”…).
+  Cambian cada 8 segundos.
 - **Cabecera viva**: el color del título va cambiando solo con los segundos, y
   los separadores son cortos. Sin contador de hilos.
 - **Números claros** encima de cada barra y etiqueta debajo, con redondeo
@@ -32,42 +38,50 @@ suda) según cómo esté el equipo.
 
 ```text
 ────────────────────────────────────────
- DASH4FUN | MODO DIVERSIÓN | V 1.1 | 12:34:56 | up 3h 12m
+ DASH4FUN | DASHY EN ACCIÓN | V 1.2 | 12:28:10 | up 2h 37m
 ────────────────────────────────────────
  AUTO-REFRESCO: 1s  |  CTRL+C: Salir
 
-                4%    25°C    23%   0.95    0%    35°C
+                3%    26°C    22%    25%    1%    37°C
                ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░
                ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░
                ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░
-      ▄▄▄▄▄    ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░
-     █ o o █   ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░
-     █  w  █   ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░  ▆▆▆▆▆
-      ▀▀▀▀▀    ░░░░░  █████  ▆▆▆▆▆  ░░░░░  ░░░░░  █████
-      ▁▁▁▁▁    ▂▂▂▂▂  █████  █████  ▄▄▄▄▄  ░░░░░  █████
+               ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░
+               ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░
+               ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░
+        ▄      ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░
+       ▄▄▄     ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░  ▃▃▃▃▃
+      █o o█    ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░  █████
+     ▐█ w █▌   ░░░░░  █████  ▅▅▅▅▅  █████  ░░░░░  █████
+       ▀▀▀     ░░░░░  █████  █████  █████  ░░░░░  █████
+      ▁▁▁▁▁    ▂▂▂▂▂  █████  █████  █████  ░░░░░  █████
                 CPU   TEMP    RAM   LOAD    GPU   GTMP
                 OK     OK     OK     OK     OK     OK
-  > Todo tranquilo, el bicho rebota feliz
+  > Dashy toma el sol en una mañana de primavera
 
- Ctrl+C para salir  |  dash4fun v1.1 — mira cómo rebota
+ Ctrl+C para salir  |  dash4fun v1.2 — Dashy en acción
 ────────────────────────────────────────
 ```
 
-Con el equipo cargado, el bicho cambia de color, acelera el rebote y, en rojo,
+Con el equipo cargado, Dashy cambia de color, acelera el rebote y, en rojo,
 entra en pánico: ojos `> <`, boca `O`, gotas de sudor (`'` y `,`) y líneas de
 velocidad (`»»`). La cara también cambia con el estado: `o o` / `w` en verde,
 `O O` / `-` en naranja y `> <` / `O` en rojo.
 
 ## Estados
 
-| Estado | Uso | Temperatura | Carga (load) | Bicho |
+| Estado | Uso | Temperatura | Carga (load) | Dashy |
 | --- | --- | --- | --- | --- |
 | Verde | < 60 % | < 70 °C | < 70 % de núcleos | Rebota tranquilo |
 | Naranja | 60–84 % | 70–84 °C | 70–89 % | Rebota más rápido |
 | Rojo | ≥ 85 % | ≥ 85 °C | ≥ 90 % | Rebota en pánico y suda |
 
-La barra de `LOAD` muestra la media de 1 minuto como número y se llena respecto
-al número de núcleos (100 % = todos los núcleos ocupados).
+El color de cada barra no salta de golpe entre esos tres estados: recorre 21
+pasos de un gradiente verde → amarillo → naranja → rojo. El estado global (y el
+color de Dashy) sigue usando los umbrales de la tabla.
+
+La barra de `LOAD` muestra el porcentaje de núcleos ocupados según la media de
+1 minuto. En modo `simple` se añaden además las medias de 1, 5 y 15 minutos.
 
 ## Requisitos
 
@@ -126,6 +140,8 @@ salir. Para terminar el bucle pulsa **Ctrl+C**.
 | --- | --- | --- |
 | `DASH4FUN_INTERVAL` | número ≥ 0.5 | Intervalo de muestreo por defecto (segundos). |
 | `DASH4FUN_MODE` | `full` \| `simple` | Modo de salida por defecto. |
+| `DASH4FUN_WIDTH` | número | Fuerza el ancho de terminal (útil sin TTY). |
+| `DASH4FUN_HEIGHT` | número | Fuerza el alto de terminal (útil sin TTY). |
 | `NO_COLOR` | cualquier valor | Desactiva los colores ANSI. |
 
 Los flags de línea de comandos tienen prioridad sobre las variables de entorno.
@@ -133,16 +149,20 @@ Los flags de línea de comandos tienen prioridad sobre las variables de entorno.
 ## Cómo funciona
 
 - La animación se redibuja cada **0,25 s**, pero el hardware se muestrea cada
-  `INTERVAL` segundos (1 s por defecto). Así el bicho se mueve fino sin leer
+  `INTERVAL` segundos (1 s por defecto). Así Dashy se mueve fino sin leer
   sensores caros cuatro veces por segundo.
 - Los colores de la cabecera se recalculan cuando cambia el segundo, con
   desplazamientos distintos para logo, modo y versión.
+- Cada barra usa un gradiente de 21 pasos según su porcentaje; Dashy y el
+  mensaje usan el color de la métrica que esté peor.
 - El uso de CPU se calcula con los deltas de `/proc/stat` entre ticks y una
   media móvil suave.
 - La temperatura, la RAM, la carga y la GPU se actualizan en cada muestreo; la
   GPU y `sensors` se consultan una sola vez por muestra.
-- El ancho de barra y la altura son fijos; si la terminal es más estrecha de
-  58 columnas se oculta el bicho, y por debajo de 44×20 se muestra un aviso.
+- La altura de las barras se adapta al alto de la terminal (8-16 celdas). Si hay
+  menos de 58 columnas o menos de 20 filas se oculta Dashy; por debajo de 44×20
+  se muestra un aviso.
+- Las frases de Dashy rotan cada 8 segundos según el estado global.
 
 ## Notas
 
