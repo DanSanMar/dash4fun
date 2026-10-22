@@ -24,7 +24,7 @@ set -u
 # ---------------------------------------------------------------------------
 # Configuración por defecto (sobrescribible por variables de entorno)
 # ---------------------------------------------------------------------------
-VERSION="1.2"
+VERSION="1.3"
 INTERVAL="${DASH4FUN_INTERVAL:-1}"   # segundos entre muestras de hardware
 MODE="${DASH4FUN_MODE:-full}"        # full | simple
 ONCE=0
@@ -87,44 +87,46 @@ fi
 RESET=$'\033[0m'
 BOLD=$'\033[1m'
 DIM=$'\033[2m'
-VERDE=$'\033[92m'
-NARANJA=$'\033[38;5;208m'
-ROJO=$'\033[91m'
-AZUL=$'\033[94m'
-CIAN=$'\033[96m'
-AMARILLO=$'\033[93m'
-BLANCO=$'\033[97m'
-GRIS=$'\033[90m'
+VERDE=$'\033[38;5;71m'            # verde apagado
+NARANJA=$'\033[38;5;173m'          # naranja terracota
+ROJO=$'\033[38;5;167m'             # rojo suave
+AZUL=$'\033[38;5;67m'              # azul acero (reposo)
+CIAN=$'\033[38;5;73m'              # cian apagado
+AMARILLO=$'\033[38;5;179m'         # oro suave
+BLANCO=$'\033[38;5;252m'           # blanco roto
+GRIS=$'\033[38;5;244m'             # gris medio
 
-TEXTOS_ESTADO=("OK" "MEDIO" "ALTO")
+COLORES_ESTADO=("$AZUL" "$VERDE" "$NARANJA" "$ROJO")
+TEXTOS_ESTADO=("CALMA" "OK" "MEDIO" "ALTO")
 
 # Paleta para la cabecera: los colores cambian solos con los segundos
 PALETA_LOGO=("$AZUL" "$VERDE" "$AMARILLO" "$CIAN" "$ROJO" \
              "$NARANJA" "$BLANCO" "$AZUL")
 
-# Gradiente de 21 pasos (0-100 %) para las barras: verde -> amarillo -> naranja -> rojo
+# Gradiente vertical de 21 pasos (0-100 % de la altura de la barra):
+# azul de reposo -> verde -> ámbar -> naranja -> rojo.
 GRADIENTE=(
-    $'\033[38;5;46m'   #   0 %
-    $'\033[38;5;46m'   #   5 %
-    $'\033[38;5;47m'   #  10 %
-    $'\033[38;5;82m'   #  15 %
-    $'\033[38;5;82m'   #  20 %
-    $'\033[38;5;118m'  #  25 %
-    $'\033[38;5;118m'  #  30 %
-    $'\033[38;5;154m'  #  35 %
-    $'\033[38;5;154m'  #  40 %
-    $'\033[38;5;190m'  #  45 %
-    $'\033[38;5;190m'  #  50 %
-    $'\033[38;5;226m'  #  55 % amarillo
-    $'\033[38;5;220m'  #  60 %
-    $'\033[38;5;214m'  #  65 %
-    $'\033[38;5;208m'  #  70 % naranja
-    $'\033[38;5;208m'  #  75 %
-    $'\033[38;5;202m'  #  80 % naranja-rojo
-    $'\033[38;5;196m'  #  85 % rojo
-    $'\033[38;5;196m'  #  90 %
-    $'\033[38;5;196m'  #  95 %
-    $'\033[38;5;196m'  # 100 %
+    "$AZUL"             #   0 %
+    "$AZUL"             #   5 %
+    $'\033[38;5;66m'    #  10 % azul-verde
+    $'\033[38;5;66m'    #  15 %
+    $'\033[38;5;72m'    #  20 % verde azulado
+    $'\033[38;5;72m'    #  25 %
+    "$VERDE"            #  30 %
+    "$VERDE"            #  35 %
+    $'\033[38;5;107m'   #  40 % verde oliva
+    $'\033[38;5;107m'   #  45 %
+    $'\033[38;5;137m'   #  50 % ámbar
+    $'\033[38;5;137m'   #  55 %
+    "$NARANJA"          #  60 %
+    "$NARANJA"          #  65 %
+    "$NARANJA"          #  70 %
+    "$NARANJA"          #  75 %
+    "$NARANJA"          #  80 %
+    "$ROJO"             #  85 %
+    "$ROJO"             #  90 %
+    $'\033[38;5;131m'   #  95 % rojo apagado
+    $'\033[38;5;131m'   # 100 %
 )
 
 # Frases de Dashy según el estado. Rotan cada pocos segundos para no repetirse.
@@ -134,11 +136,16 @@ FRASES_DASHY_0=(
     "Dashy se balancea tranquilo, sin prisa"
 )
 FRASES_DASHY_1=(
-    "Dashy trota: el PC ya nota el esfuerzo"
-    "Dashy se abanica, pero mantiene el tipo"
-    "Dashy mira el reloj: esto se calienta"
+    "Dashy trota: el PC va cómodo"
+    "Dashy se estira: todo bajo control"
+    "Dashy mira el horizonte, sin sudar"
 )
 FRASES_DASHY_2=(
+    "Dashy se abanica, pero mantiene el tipo"
+    "Dashy mira el reloj: esto se calienta"
+    "Dashy aprieta el paso: el PC pide ayuda"
+)
+FRASES_DASHY_3=(
     "Dashy entra en pánico y busca el extintor"
     "Dashy abanica el disipador como puede"
     "Dashy chilla: ¡esto va a tope!"
@@ -177,6 +184,7 @@ if [ "$USE_COLOR" -eq 0 ]; then
     RESET=''; BOLD=''; DIM=''
     VERDE=''; NARANJA=''; ROJO=''; AZUL=''; CIAN=''; AMARILLO=''; BLANCO=''; GRIS=''
     PALETA_LOGO=("" "" "" "" "" "" "" "")
+    COLORES_ESTADO=("" "" "" "")
     for (( i=0; i<${#GRADIENTE[@]}; i++ )); do GRADIENTE[i]=''; done
 fi
 
@@ -202,6 +210,15 @@ color_pct_var() {
     i=$(( p / 5 ))
     [ "$i" -gt 20 ] && i=20
     COLOR_PCT=${GRADIENTE[$i]}
+}
+
+# Deja en SEV_CALC el nivel 0-3 usando los umbrales verde/naranja/rojo
+calcular_sev() {
+    local p="$1" v="$2" n="$3" r="$4"
+    if [ "$p" -ge "$r" ]; then SEV_CALC=3
+    elif [ "$p" -ge "$n" ]; then SEV_CALC=2
+    elif [ "$p" -ge "$v" ]; then SEV_CALC=1
+    else SEV_CALC=0; fi
 }
 
 # Versión sin subproceso: deja el texto centrado en CENTRADA
@@ -479,106 +496,87 @@ NOMBRES=(CPU TEMP RAM LOAD GPU GTMP)
 declare -a PCT=(0 0 0 0 0 0)
 declare -a VAL=("0%" "--°C" "0%" "0.00" "n/d" "--°C")
 declare -a COLBAR=("" "" "" "" "" "")
-declare -a ETIQ=("OK" "n/d" "OK" "OK" "n/d" "n/d")
+declare -a ETIQ=("CALMA" "n/d" "CALMA" "CALMA" "n/d" "n/d")
 declare -a SEV=(0 -1 0 0 -1 -1)
 
 ESTADO_GLOBAL=0
-COLOR_ESTADO="${GRADIENTE[0]}"
+COLOR_ESTADO="${COLORES_ESTADO[0]}"
 MENSAJE_ESTADO=""
 PEOR_METRICA=""
 
 # Rellena los arrays de dibujo a partir de las lecturas actuales
 # (sin subprocesos: se llama 4 veces por segundo)
 preparar_barras() {
-    local sev i n
+    local i n
     local -a frases
 
-    # CPU
+    # CPU: reposo <30, verde <60, naranja <85, rojo >=85
     PCT[0]=$CPU_PCT
     VAL[0]="${CPU_PCT}%"
-    color_pct_var "$CPU_PCT"
-    if [ "$CPU_PCT" -ge 85 ]; then sev=2
-    elif [ "$CPU_PCT" -ge 60 ]; then sev=1
-    else sev=0; fi
-    SEV[0]=$sev; COLBAR[0]=$COLOR_PCT; ETIQ[0]=${TEXTOS_ESTADO[$sev]}
+    calcular_sev "$CPU_PCT" 30 60 85
+    SEV[0]=$SEV_CALC; COLBAR[0]=${COLORES_ESTADO[$SEV_CALC]}; ETIQ[0]=${TEXTOS_ESTADO[$SEV_CALC]}
 
-    # Temperatura CPU
+    # Temperatura CPU: reposo <50, verde <70, naranja <85, rojo >=85
     if [ "${TEMP_CPU:-0}" -gt 0 ] 2>/dev/null; then
         PCT[1]=$TEMP_CPU
         VAL[1]="${TEMP_CPU}°C"
-        color_pct_var "$TEMP_CPU"
-        if [ "$TEMP_CPU" -ge 85 ]; then sev=2
-        elif [ "$TEMP_CPU" -ge 70 ]; then sev=1
-        else sev=0; fi
-        SEV[1]=$sev; COLBAR[1]=$COLOR_PCT; ETIQ[1]=${TEXTOS_ESTADO[$sev]}
+        calcular_sev "$TEMP_CPU" 50 70 85
+        SEV[1]=$SEV_CALC; COLBAR[1]=${COLORES_ESTADO[$SEV_CALC]}; ETIQ[1]=${TEXTOS_ESTADO[$SEV_CALC]}
     else
         PCT[1]=0; VAL[1]="--°C"; SEV[1]=-1
         COLBAR[1]="$GRIS"; ETIQ[1]="n/d"
     fi
 
-    # RAM
+    # RAM: reposo <30, verde <60, naranja <85, rojo >=85
     PCT[2]=$RAM_PCT
     VAL[2]="${RAM_PCT}%"
-    color_pct_var "$RAM_PCT"
-    if [ "$RAM_PCT" -ge 85 ]; then sev=2
-    elif [ "$RAM_PCT" -ge 60 ]; then sev=1
-    else sev=0; fi
-    SEV[2]=$sev; COLBAR[2]=$COLOR_PCT; ETIQ[2]=${TEXTOS_ESTADO[$sev]}
+    calcular_sev "$RAM_PCT" 30 60 85
+    SEV[2]=$SEV_CALC; COLBAR[2]=${COLORES_ESTADO[$SEV_CALC]}; ETIQ[2]=${TEXTOS_ESTADO[$SEV_CALC]}
 
-    # LOAD (media de 1 min relativa a los núcleos)
+    # LOAD: reposo <40, verde <70, naranja <90, rojo >=90
     PCT[3]=$LOAD_PCT
     VAL[3]="${LOAD_PCT}%"
-    color_pct_var "$LOAD_PCT"
-    if [ "$LOAD_PCT" -ge 90 ]; then sev=2
-    elif [ "$LOAD_PCT" -ge 70 ]; then sev=1
-    else sev=0; fi
-    SEV[3]=$sev; COLBAR[3]=$COLOR_PCT; ETIQ[3]=${TEXTOS_ESTADO[$sev]}
+    calcular_sev "$LOAD_PCT" 40 70 90
+    SEV[3]=$SEV_CALC; COLBAR[3]=${COLORES_ESTADO[$SEV_CALC]}; ETIQ[3]=${TEXTOS_ESTADO[$SEV_CALC]}
 
-    # GPU uso
+    # GPU uso: reposo <30, verde <60, naranja <85, rojo >=85
     if [ -n "$GPU_UTIL" ]; then
         PCT[4]=$GPU_UTIL
         VAL[4]="${GPU_UTIL}%"
-        color_pct_var "$GPU_UTIL"
-        if [ "$GPU_UTIL" -ge 85 ]; then sev=2
-        elif [ "$GPU_UTIL" -ge 60 ]; then sev=1
-        else sev=0; fi
-        SEV[4]=$sev; COLBAR[4]=$COLOR_PCT; ETIQ[4]=${TEXTOS_ESTADO[$sev]}
+        calcular_sev "$GPU_UTIL" 30 60 85
+        SEV[4]=$SEV_CALC; COLBAR[4]=${COLORES_ESTADO[$SEV_CALC]}; ETIQ[4]=${TEXTOS_ESTADO[$SEV_CALC]}
     else
         PCT[4]=0; VAL[4]="n/d"; SEV[4]=-1
         COLBAR[4]="$GRIS"; ETIQ[4]="n/d"
     fi
 
-    # GPU temperatura
+    # GPU temperatura: reposo <50, verde <70, naranja <85, rojo >=85
     if [ "${GPU_TEMP:-0}" -gt 0 ] 2>/dev/null; then
         PCT[5]=$GPU_TEMP
         VAL[5]="${GPU_TEMP}°C"
-        color_pct_var "$GPU_TEMP"
-        if [ "$GPU_TEMP" -ge 85 ]; then sev=2
-        elif [ "$GPU_TEMP" -ge 70 ]; then sev=1
-        else sev=0; fi
-        SEV[5]=$sev; COLBAR[5]=$COLOR_PCT; ETIQ[5]=${TEXTOS_ESTADO[$sev]}
+        calcular_sev "$GPU_TEMP" 50 70 85
+        SEV[5]=$SEV_CALC; COLBAR[5]=${COLORES_ESTADO[$SEV_CALC]}; ETIQ[5]=${TEXTOS_ESTADO[$SEV_CALC]}
     else
         PCT[5]=0; VAL[5]="--°C"; SEV[5]=-1
         COLBAR[5]="$GRIS"; ETIQ[5]="n/d"
     fi
 
-    # Estado global: el peor de todos (los n/d no cuentan). El color de Dashy
-    # y del mensaje usa el gradiente de la métrica que se ha puesto peor.
+    # Estado global: el peor de todos (los n/d no cuentan)
     ESTADO_GLOBAL=0
-    COLOR_ESTADO="${GRADIENTE[0]}"
     PEOR_METRICA=""
     for (( i=0; i<6; i++ )); do
         if [ "${SEV[i]}" -gt "$ESTADO_GLOBAL" ]; then
             ESTADO_GLOBAL=${SEV[i]}
             PEOR_METRICA=${NOMBRES[i]}
-            COLOR_ESTADO=${COLBAR[i]}
         fi
     done
+    COLOR_ESTADO=${COLORES_ESTADO[$ESTADO_GLOBAL]}
 
     case "$ESTADO_GLOBAL" in
         0) frases=("${FRASES_DASHY_0[@]}") ;;
         1) frases=("${FRASES_DASHY_1[@]}") ;;
         2) frases=("${FRASES_DASHY_2[@]}") ;;
+        3) frases=("${FRASES_DASHY_3[@]}") ;;
     esac
     n=${#frases[@]}
     MENSAJE_ESTADO=${frases[$(( (SECONDS / 8) % n ))]}
@@ -589,9 +587,12 @@ preparar_barras() {
 # ---------------------------------------------------------------------------
 PARCIAL=(▁ ▂ ▃ ▄ ▅ ▆ ▇)
 
-# bar_cell_var <pct> <fila 0=abajo> <color> -> deja la celda en CELDA
+# bar_cell_var <pct> <fila 0=abajo> -> deja la celda en CELDA con el color
+# que corresponde a la altura de esa fila (azul abajo, rojo arriba).
 bar_cell_var() {
-    local pct="$1" fila="$2" col="$3" eighths c g s i
+    local pct="$1" fila="$2" eighths c g s i col
+    color_pct_var $(( (fila * 100 + 50) / BAR_H ))
+    col=$COLOR_PCT
     eighths=$(( pct * BAR_H * 8 / 100 ))
     [ "$eighths" -lt 0 ] && eighths=0
     c=$(( eighths - fila * 8 ))
@@ -643,8 +644,8 @@ ANIM_TICK=0
 
 actualizar_paso() {
     local cada=4
-    [ "$ESTADO_GLOBAL" -eq 1 ] && cada=2
-    [ "$ESTADO_GLOBAL" -eq 2 ] && cada=1
+    [ "$ESTADO_GLOBAL" -eq 2 ] && cada=2
+    [ "$ESTADO_GLOBAL" -eq 3 ] && cada=1
     ANIM_TICK=$(( ANIM_TICK + 1 ))
     if [ $(( ANIM_TICK % cada )) -eq 0 ]; then
         DASHY_FRAME=$(( (DASHY_FRAME + 1) % 4 ))
@@ -656,9 +657,9 @@ dashy_line_var() {
     local idx="$1" art speed="" sweat=" " pos ojos="o o" boca="w"
     art="${DASHY[$((DASHY_FRAME * 6 + idx))]}"
 
-    # La cara cuenta el estado: feliz, concentrado o entrando en pánico
-    [ "$ESTADO_GLOBAL" -eq 1 ] && { ojos="O O"; boca="-"; }
-    [ "$ESTADO_GLOBAL" -eq 2 ] && { ojos="> <"; boca="O"; }
+    # La cara cuenta el estado: tranquilo, concentrado o en pánico
+    [ "$ESTADO_GLOBAL" -eq 2 ] && { ojos="O O"; boca="-"; }
+    [ "$ESTADO_GLOBAL" -eq 3 ] && { ojos="> <"; boca="O"; }
     art="${art/o o/$ojos}"
     art="${art/w/$boca}"
 
@@ -666,11 +667,11 @@ dashy_line_var() {
         case "$idx" in
             2|3) speed="»" ;;
         esac
-        [ "$ESTADO_GLOBAL" -eq 2 ] && speed="»»"
+        [ "$ESTADO_GLOBAL" -eq 3 ] && speed="»»"
     fi
     printf -v speed '%-2s' "$speed"
 
-    if [ "$ESTADO_GLOBAL" -eq 2 ]; then
+    if [ "$ESTADO_GLOBAL" -eq 3 ]; then
         pos=$(( (ANIM_TICK / 2) % 4 ))
         if [ "$idx" -eq "$pos" ]; then
             sweat="'"
@@ -760,7 +761,7 @@ draw_panel() {
                 centrar_var "${VAL[i]}" "$BAR_W"
                 celda="${BOLD}${COLBAR[i]}${CENTRADA}${RESET}"
             elif [ "$r" -le "$BAR_H" ]; then
-                bar_cell_var "${PCT[i]}" $((BAR_H - r)) "${COLBAR[i]}"
+                bar_cell_var "${PCT[i]}" $((BAR_H - r))
                 celda=$CELDA
             elif [ "$r" -eq $((BAR_H + 1)) ]; then
                 centrar_var "${NOMBRES[i]}" "$BAR_W"

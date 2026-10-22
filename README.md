@@ -2,10 +2,11 @@
 
 Monitor de recursos de terminal, en un único script Bash, con vocación de
 **pasar el rato mirándolo**: temperatura y carga de trabajo en **barras
-verticales** y **Dashy**, un bicho rebotón que se pone feliz, serio o entra en
-pánico (y suda) según cómo esté el equipo.
+verticales** y **Dashy**, un bicho rebotón que descansa en azul, trota en verde,
+se concentra en naranja o entra en pánico (y suda) en rojo según cómo esté el
+equipo.
 
-![versión](https://img.shields.io/badge/versión-1.2-blue)
+![versión](https://img.shields.io/badge/versión-1.3-blue)
 ![licencia](https://img.shields.io/badge/licencia-GPL--3.0--or--later-green)
 
 ## Características
@@ -13,14 +14,16 @@ pánico (y suda) según cómo esté el equipo.
 - **Seis barras verticales** de altura adaptable (8-16 celdas según la
   terminal): uso de CPU, temperatura de CPU, RAM, carga del sistema (`load avg`
   relativa a los núcleos), uso de GPU y temperatura de GPU.
-- **Gradiente de color continuo**: las barras pasan por verdes, amarillos,
-  naranjas y rojos según el porcentaje, con 21 pasos intermedios. Así el naranja
-  aparece de forma progresiva, no solo al cruzar un umbral.
+- **Gradiente vertical por barra**: la base es **azul de reposo** y, a medida
+  que sube el llenado, aparecen verdes, ámbar, naranjas y rojos. Cada celda
+  tiene su color según la altura; la barra no se vuelve de un único tono.
+- **Paleta suave**: verdes, naranjas y rojos apagados, sin colores fosforitos,
+  para que la subida de temperatura y carga se lea mejor.
 - **Porcentaje bien visible**: el valor de cada barra se muestra en negrita
   encima; `LOAD` ahora también se expresa como % de núcleos ocupados.
 - **Dashy, el bicho animado**: cuatro poses de rebote (normal, estirado,
-  antena ladeada y aplastado). En verde sonríe y rebota tranquilo; en naranja se
-  concentra y acelera; en rojo entra en pánico y suda.
+  antena ladeada y aplastado). En azul descansa, en verde trota, en naranja se
+  concentra y en rojo entra en pánico y suda.
 - **Frases con humor**: Dashy va contando qué tal va el PC (“Dashy toma el sol
   en una mañana de primavera”, “Dashy entra en pánico y busca el extintor”…).
   Cambian cada 8 segundos.
@@ -38,11 +41,11 @@ pánico (y suda) según cómo esté el equipo.
 
 ```text
 ────────────────────────────────────────
- DASH4FUN | DASHY EN ACCIÓN | V 1.2 | 12:28:10 | up 2h 37m
+ DASH4FUN | DASHY EN ACCIÓN | V 1.3 | 12:34:57 | up 2h 44m
 ────────────────────────────────────────
  AUTO-REFRESCO: 1s  |  CTRL+C: Salir
 
-                3%    26°C    22%    25%    1%    37°C
+                5%    26°C    23%    19%    2%    47°C
                ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░
                ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░
                ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░  ░░░░░
@@ -56,29 +59,32 @@ pánico (y suda) según cómo esté el equipo.
        ▀▀▀     ░░░░░  █████  █████  █████  ░░░░░  █████
       ▁▁▁▁▁    ▂▂▂▂▂  █████  █████  █████  ░░░░░  █████
                 CPU   TEMP    RAM   LOAD    GPU   GTMP
-                OK     OK     OK     OK     OK     OK
+                CALMA  CALMA  CALMA  CALMA  CALMA  CALMA
   > Dashy toma el sol en una mañana de primavera
 
- Ctrl+C para salir  |  dash4fun v1.2 — Dashy en acción
+ Ctrl+C para salir  |  dash4fun v1.3 — Dashy en acción
 ────────────────────────────────────────
 ```
 
-Con el equipo cargado, Dashy cambia de color, acelera el rebote y, en rojo,
-entra en pánico: ojos `> <`, boca `O`, gotas de sudor (`'` y `,`) y líneas de
-velocidad (`»»`). La cara también cambia con el estado: `o o` / `w` en verde,
-`O O` / `-` en naranja y `> <` / `O` en rojo.
+Con el equipo en reposo, Dashy es azul y descansa; al cargarse pasa a verde,
+naranja y rojo, acelera el rebote y, en rojo, entra en pánico: ojos `> <`, boca
+`O`, gotas de sudor (`'` y `,`) y líneas de velocidad (`»»`). La cara también
+cambia con el estado: `o o` / `w` en azul y verde, `O O` / `-` en naranja y
+`> <` / `O` en rojo.
 
 ## Estados
 
 | Estado | Uso | Temperatura | Carga (load) | Dashy |
 | --- | --- | --- | --- | --- |
-| Verde | < 60 % | < 70 °C | < 70 % de núcleos | Rebota tranquilo |
-| Naranja | 60–84 % | 70–84 °C | 70–89 % | Rebota más rápido |
-| Rojo | ≥ 85 % | ≥ 85 °C | ≥ 90 % | Rebota en pánico y suda |
+| Azul (reposo) | < 30 % | < 50 °C | < 40 % de núcleos | Descansa al sol |
+| Verde | 30–59 % | 50–69 °C | 40–69 % | Trota tranquilo |
+| Naranja | 60–84 % | 70–84 °C | 70–89 % | Se abanica y acelera |
+| Rojo | ≥ 85 % | ≥ 85 °C | ≥ 90 % | Entra en pánico y suda |
 
-El color de cada barra no salta de golpe entre esos tres estados: recorre 21
-pasos de un gradiente verde → amarillo → naranja → rojo. El estado global (y el
-color de Dashy) sigue usando los umbrales de la tabla.
+Cada barra es un gradiente vertical: la base es azul y, según sube el llenado,
+va pasando por verde, ámbar, naranja y rojo. Una barra alta muestra varios
+colores a la vez; no se colorea entera de un solo tono. El estado global (y el
+color de Dashy) se decide con los umbrales de la tabla.
 
 La barra de `LOAD` muestra el porcentaje de núcleos ocupados según la media de
 1 minuto. En modo `simple` se añaden además las medias de 1, 5 y 15 minutos.
@@ -153,8 +159,9 @@ Los flags de línea de comandos tienen prioridad sobre las variables de entorno.
   sensores caros cuatro veces por segundo.
 - Los colores de la cabecera se recalculan cuando cambia el segundo, con
   desplazamientos distintos para logo, modo y versión.
-- Cada barra usa un gradiente de 21 pasos según su porcentaje; Dashy y el
-  mensaje usan el color de la métrica que esté peor.
+- Cada celda de una barra toma su color según la altura que ocupa: azul en la
+  base, luego verde, ámbar, naranja y rojo. Dashy y el mensaje usan el color del
+  peor estado (azul/verde/naranja/rojo).
 - El uso de CPU se calcula con los deltas de `/proc/stat` entre ticks y una
   media móvil suave.
 - La temperatura, la RAM, la carga y la GPU se actualizan en cada muestreo; la
