@@ -3,7 +3,8 @@
 # dash4fun — Monitor de recursos, versión divertida
 #
 # Datos básicos de temperatura y carga de trabajo en barras verticales, con un
-# muñeco que trota, corre o esprinta (y suda) según el estado del equipo.
+# bicho que rebota, se concentra o entra en pánico (y suda) según el estado del
+# equipo.
 #
 # Copyright (C) 2026 DanSanMar
 #
@@ -23,7 +24,7 @@ set -u
 # ---------------------------------------------------------------------------
 # Configuración por defecto (sobrescribible por variables de entorno)
 # ---------------------------------------------------------------------------
-VERSION="1.0"
+VERSION="1.1"
 INTERVAL="${DASH4FUN_INTERVAL:-1}"   # segundos entre muestras de hardware
 MODE="${DASH4FUN_MODE:-full}"        # full | simple
 ONCE=0
@@ -104,7 +105,6 @@ COLOR_LOGO=""
 COLOR_MODO=""
 COLOR_VER=""
 COLOR_DASH=""
-COLOR_RAYO=""
 SEG_COLORES=""
 
 # Elige los colores de la cabecera a partir del segundo actual. Solo recalcula
@@ -120,7 +120,6 @@ actualizar_colores_hora() {
     COLOR_MODO=${PALETA_LOGO[$(( (seg + 2) % n ))]}
     COLOR_VER=${PALETA_LOGO[$(( (seg + 4) % n ))]}
     COLOR_DASH=${PALETA_LOGO[$(( (seg + 1) % n ))]}
-    COLOR_RAYO=${PALETA_LOGO[$(( (seg + 6) % n ))]}
 }
 
 # En modo simple sin TTY (tuberías) no se emiten colores; tampoco con NO_COLOR
@@ -514,14 +513,14 @@ preparar_barras() {
 
     COLOR_ESTADO=${COLORES_ESTADO[$ESTADO_GLOBAL]}
     case "$ESTADO_GLOBAL" in
-        0) MENSAJE_ESTADO="Todo tranquilo, el muñeco trota feliz" ;;
+        0) MENSAJE_ESTADO="Todo tranquilo, el bicho rebota feliz" ;;
         1) MENSAJE_ESTADO="Se está poniendo serio... ¡acelera!" ;;
         2) MENSAJE_ESTADO="¡A TOPE! Sudando la gota gorda" ;;
     esac
 }
 
 # ---------------------------------------------------------------------------
-# Dibujo: barras y muñeco
+# Dibujo: barras y bicho
 # ---------------------------------------------------------------------------
 PARCIAL=(▁ ▂ ▃ ▄ ▅ ▆ ▇)
 
@@ -718,14 +717,17 @@ draw_status() {
 }
 
 draw_footer() {
+    local largo
     printf '\n'
     if [ "${WIDTH:-80}" -ge 60 ]; then
-        printf ' %sCtrl+C para salir  |  dash4fun v%s — mira cómo corre%s\n' \
+        printf ' %sCtrl+C para salir  |  dash4fun v%s — mira cómo rebota%s\n' \
             "$DIM" "$VERSION" "$RESET"
     else
         printf ' %sCtrl+C salir  |  v%s%s\n' "$DIM" "$VERSION" "$RESET"
     fi
-    sep_var $(( ${WIDTH:-80} - 1 ))
+    largo=$(( ${WIDTH:-80} - 1 ))
+    [ "$largo" -gt 40 ] && largo=40
+    sep_var "$largo"
     printf '%s%s%s\n' "$COLOR_DASH" "$SEPARADOR" "$RESET"
 }
 
@@ -766,7 +768,7 @@ draw_simple() {
             RAM)
                 extra="$(human_bytes $((RAM_USED_KB * 1024))) / $(human_bytes $((RAM_TOTAL_KB * 1024)))" ;;
             LOAD)
-                extra="${CPUS} hilos  ($LOAD_L5 / $LOAD_L15)" ;;
+                extra="5m $LOAD_L5 / 15m $LOAD_L15" ;;
             GPU)
                 [ "$GPU_TYPE" = "NONE" ] && extra="sin GPU detectada" \
                     || extra="$GPU_MODEL" ;;
@@ -822,7 +824,7 @@ run_once() {
     muestrear_lento
     preparar_barras
     ANIM_TICK=1
-    RUNNER_FRAME=0
+    BICHO_FRAME=0
     render_frame
 }
 
@@ -883,7 +885,7 @@ trap cleanup EXIT
 # ---------------------------------------------------------------------------
 # Punto de entrada
 # ---------------------------------------------------------------------------
-colores_aleatorios
+actualizar_colores_hora
 detectar_gpu
 
 if [ "$ONCE" -eq 1 ]; then
