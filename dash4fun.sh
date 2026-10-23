@@ -28,6 +28,8 @@ VERSION="1.4"
 INTERVAL="${DASH4FUN_INTERVAL:-1}"   # segundos entre muestras de hardware
 MODE="${DASH4FUN_MODE:-full}"        # full | simple
 ONCE=0
+DASHY_ENABLED=1
+[ "${DASH4FUN_DASHY:-1}" = "0" ] && DASHY_ENABLED=0
 
 TICK="0.25"        # refresco de la animación (segundos)
 BAR_H=12           # altura por defecto; se adapta a la terminal
@@ -140,6 +142,10 @@ FRASES_DASHY_0=(
     "Dashy está mirando las nubes desde la CPU"
     "Dashy está ronroneando como un gato feliz"
     "Dashy está planeando no hacer nada en todo el día"
+    "Dashy está bostezando y se le escapa un Zzz"
+    "Dashy está contando los núcleos del uno al doce"
+    "Dashy está regando las plantas del escritorio"
+    "Dashy está roncando en clave de sol"
 )
 FRASES_DASHY_1=(
     "Dashy está trotando: el PC va cómodo"
@@ -151,6 +157,10 @@ FRASES_DASHY_1=(
     "Dashy está calentando motores, pero solo un poco"
     "Dashy está dando un paseo por la memoria RAM"
     "Dashy está ensayando su discurso de calma"
+    "Dashy está haciendo la ronda por los núcleos"
+    "Dashy está saludando con la patita a los procesos"
+    "Dashy está tarareando la canción del ventilador"
+    "Dashy está vigilando que nadie toque el disipador"
 )
 FRASES_DASHY_2=(
     "Dashy está abanicando la CPU como un loco"
@@ -163,6 +173,10 @@ FRASES_DASHY_2=(
     "Dashy está abriendo la ventana por si acaso"
     "Dashy está pidiendo calma a los procesos"
     "Dashy está cerrando pestañas de Chrome a toda prisa"
+    "Dashy está buscando el ventilador a cuatro patas"
+    "Dashy está abanicándose con la hoja de especificaciones"
+    "Dashy está contando hasta diez para no perder los nervios"
+    "Dashy está preguntando quién abrió tantas pestañas"
 )
 FRASES_DASHY_3=(
     "Dashy está corriendo en busca del extintor"
@@ -175,6 +189,10 @@ FRASES_DASHY_3=(
     "Dashy está pidiendo auxilio al dios de los ventiladores"
     "Dashy está considerando seriamente apagar el PC"
     "Dashy está invocando a systemd para que le eche una mano"
+    "Dashy está gritando: ¡que alguien abra la ventana!"
+    "Dashy está usando el extintor como abanico"
+    "Dashy está escondiendo los procesos bajo la alfombra"
+    "Dashy está pidiendo socorro en lenguaje máquina"
 )
 
 COLOR_LOGO=""
@@ -407,6 +425,31 @@ read_load() {
     fi
 }
 
+# --- Batería (opcional: solo se muestra si existe) ---
+BAT_PCT=""
+BAT_AC=0
+
+leer_bateria() {
+    local bat ac cap online
+    BAT_PCT=""
+    BAT_AC=0
+    for bat in /sys/class/power_supply/BAT*; do
+        [ -f "$bat/capacity" ] || continue
+        cap=$(cat "$bat/capacity" 2>/dev/null)
+        cap=${cap//[^0-9]/}
+        [ -n "$cap" ] || continue
+        [ "$cap" -gt 100 ] 2>/dev/null && cap=100
+        BAT_PCT=$cap
+        break
+    done
+    [ -z "$BAT_PCT" ] && return
+    for ac in /sys/class/power_supply/*; do
+        [ -f "$ac/online" ] || continue
+        online=$(cat "$ac/online" 2>/dev/null)
+        [ "$online" = "1" ] && { BAT_AC=1; break; }
+    done
+}
+
 # --- Temperatura CPU (sysfs + sensors) ---
 obtener_temp_cpu() {
     local temp=0 zone type raw
@@ -521,6 +564,7 @@ TEMP_CPU=0
 muestrear_lento() {
     read_ram
     read_load
+    leer_bateria
     TEMP_CPU=$(obtener_temp_cpu)
     muestrear_gpu
 }
@@ -537,6 +581,9 @@ declare -a ETIQ=("CALMA" "n/d" "CALMA" "CALMA" "n/d" "n/d")
 declare -a SEV=(0 -1 0 0 -1 -1)
 
 ESTADO_GLOBAL=0
+ESTADO_ANTERIOR=0
+REACCION_TICKS=0
+REACCION_BAJADA=0
 COLOR_ESTADO="${COLORES_ESTADO[0]}"
 MENSAJE_ESTADO=""
 PEOR_METRICA=""
@@ -609,6 +656,15 @@ preparar_barras() {
     done
     COLOR_ESTADO=${COLORES_ESTADO[$ESTADO_GLOBAL]}
     DASHY_SEQ=${SECUENCIAS_DASHY[$ESTADO_GLOBAL]}
+
+    # Al cambiar de estado, Dashy reacciona un momento: salta si sube la carga
+    # y aterriza suave si vuelve la calma.
+    if [ "$ESTADO_GLOBAL" -ne "$ESTADO_ANTERIOR" ]; then
+        REACCION_TICKS=8
+        REACCION_BAJADA=0
+        [ "$ESTADO_GLOBAL" -lt "$ESTADO_ANTERIOR" ] && REACCION_BAJADA=1
+        ESTADO_ANTERIOR=$ESTADO_GLOBAL
+    fi
 
     case "$ESTADO_GLOBAL" in
         0) frases=("${FRASES_DASHY_0[@]}") ;;
@@ -702,11 +758,19 @@ DASHY_SEQ="01"
 ANIM_TICK=0
 
 actualizar_paso() {
-    local cada=8 n=${#DASHY_SEQ}
+    local cada=8 n
+    if [ "$REACCION_TICKS" -gt 0 ]; then
+        # Micro-reacción al cambio de estado: salto y aterrizaje
+        if [ "$REACCION_BAJADA" -eq 1 ]; then DASHY_SEQ="50"; else DASHY_SEQ="45"; fi
+        cada=2
+        REACCION_TICKS=$(( REACCION_TICKS - 1 ))
+    else
+        [ "$ESTADO_GLOBAL" -eq 1 ] && cada=4
+        [ "$ESTADO_GLOBAL" -eq 2 ] && cada=3
+        [ "$ESTADO_GLOBAL" -eq 3 ] && cada=1
+    fi
+    n=${#DASHY_SEQ}
     DASHY_FRAME=$(( DASHY_FRAME % n ))
-    [ "$ESTADO_GLOBAL" -eq 1 ] && cada=4
-    [ "$ESTADO_GLOBAL" -eq 2 ] && cada=3
-    [ "$ESTADO_GLOBAL" -eq 3 ] && cada=1
     ANIM_TICK=$(( ANIM_TICK + 1 ))
     if [ $(( ANIM_TICK % cada )) -eq 0 ]; then
         DASHY_FRAME=$(( (DASHY_FRAME + 1) % n ))
@@ -745,10 +809,11 @@ dashy_line_var() {
 
     # Columna derecha (1 celda): Zzz, silbido, sudor o alarmas
     case "$ESTADO_GLOBAL" in
-        0)  # roncando: una Zz sube desde la cabecera
+        0)  # roncando: una Zzz sube desde la cabecera
             pos=$(( 2 - (ANIM_TICK / 6) % 3 ))
             [ "$idx" -eq "$pos" ] && sweat="Z"
             [ "$idx" -eq $((pos + 1)) ] && sweat="z"
+            [ "$idx" -eq $((pos + 2)) ] && sweat="z"
             ;;
         1)  # silbando mientras vigila
             pos=$(( 2 - (ANIM_TICK / 8) % 3 ))
@@ -827,7 +892,7 @@ draw_panel() {
     local area_rows=$(( BAR_H + 3 )) dashy_top i r linea celda
     local show_dashy=0
     dashy_top=$(( BAR_H - 5 ))   # Dashy apoya la sombra en la base de las barras
-    if [ "$WIDTH" -ge 58 ] && [ "$HEIGHT" -ge 20 ]; then
+    if [ "$DASHY_ENABLED" -eq 1 ] && [ "$WIDTH" -ge 58 ] && [ "$HEIGHT" -ge 20 ]; then
         show_dashy=1
     fi
 
@@ -868,15 +933,27 @@ draw_status() {
     ancho=$(( ${WIDTH:-80} - 4 - ${#extra} ))
     [ "$ancho" -lt 10 ] && ancho=10
     recortar_var "$MENSAJE_ESTADO" "$ancho"
-    printf '  %s%s> %s%s%s\n' "$COLOR_ESTADO" "$BOLD" "$RECORTADA" "$extra" "$RESET"
+    printf '  %s%s> %s%s%s%s\n' "$COLOR_ESTADO" "$BOLD" "$RECORTADA" "$extra" "$RESET"
 }
 
 draw_footer() {
-    local largo
+    local largo bateria="" col_bat="$CIAN" base
     printf '\n'
+    base="Ctrl+C para salir  |  dash4fun v${VERSION} — Dashy en acción"
+    if [ -n "${BAT_PCT:-}" ]; then
+        if [ "${BAT_AC:-0}" -eq 1 ]; then
+            bateria="  |  AC ${BAT_PCT}%"
+            col_bat="$VERDE"
+        elif [ "$BAT_PCT" -le 20 ]; then
+            bateria="  |  BAT ${BAT_PCT}% !"
+            col_bat="$ROJO"
+        else
+            bateria="  |  BAT ${BAT_PCT}%"
+        fi
+        [ $(( ${#base} + ${#bateria} + 1 )) -gt "${WIDTH:-80}" ] && bateria=""
+    fi
     if [ "${WIDTH:-80}" -ge 60 ]; then
-        printf ' %sCtrl+C para salir  |  dash4fun v%s — Dashy en acción%s\n' \
-            "$DIM" "$VERSION" "$RESET"
+        printf ' %s%s%s%s%s%s\n' "$DIM" "$base" "$RESET" "$col_bat" "$bateria" "$RESET"
     else
         printf ' %sCtrl+C salir  |  v%s%s\n' "$DIM" "$VERSION" "$RESET"
     fi
