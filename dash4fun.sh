@@ -608,6 +608,7 @@ preparar_barras() {
         fi
     done
     COLOR_ESTADO=${COLORES_ESTADO[$ESTADO_GLOBAL]}
+    DASHY_SEQ=${SECUENCIAS_DASHY[$ESTADO_GLOBAL]}
 
     case "$ESTADO_GLOBAL" in
         0) frases=("${FRASES_DASHY_0[@]}") ;;
@@ -645,77 +646,125 @@ bar_cell_var() {
     fi
 }
 
-# Fotogramas de Dashy: 4 poses x 6 líneas (cuerpo de 9 columnas)
+# Fotogramas de Dashy: 6 poses x 6 líneas (cuerpo de 9 columnas).
+#  0 reposo, 1 agachado, 2 inclinado a la izquierda, 3 a la derecha,
+#  4 en el aire, 5 aterrizaje aplastado.
 DASHY=(
-"    ▄    "
 "   ▄▄▄   "
 "  █o o█  "
 " ▐█ w █▌ "
+"  █████  "
 "   ▀▀▀   "
 "  ▁▁▁▁▁  "
 
-"   ▄▄▄   "
-"  █o o█  "
-"  █ w █  "
-" ▐█   █▌ "
-"   ▀▀▀   "
-"  ▐   ▌  "
-
-"  ▄      "
+"         "
 "   ▄▄▄   "
 "  █o o█  "
 " ▐█ w █▌ "
-"   ▀▀▀   "
+"  ▀▀▀▀▀  "
+" ▁▁▁▁▁▁▁ "
+
+"  ▄▄▄    "
+" █o o█   "
+"▐█ w █▌  "
+" █████   "
+"  ▀▀▀    "
+" ▁▁▁▁▁   "
+
+"    ▄▄▄  "
+"   █o o█ "
+"  ▐█ w █▌"
+"   █████ "
+"    ▀▀▀  "
+"   ▁▁▁▁▁ "
+
+"   ▄▄▄   "
+"  █o o█  "
+" ▐█ w █▌ "
+"  █████  "
+"  ▐   ▌  "
 "   ▁▁▁   "
 
 "         "
 "  ▄▄▄▄▄  "
 " █ o o █ "
-" █  w  █ "
+"▐█  w  █▌"
 "  ▀▀▀▀▀  "
 " ▁▁▁▁▁▁▁ "
 )
 
+# Cada estado usa su propia secuencia de poses: respira, pasea, se pone
+# nervioso o entra en pánico. Los dígitos son índices de DASHY.
+SECUENCIAS_DASHY=("01" "0123" "0232" "4523")
+
 DASHY_FRAME=0
+DASHY_SEQ="01"
 ANIM_TICK=0
 
 actualizar_paso() {
-    local cada=4
-    [ "$ESTADO_GLOBAL" -eq 2 ] && cada=2
+    local cada=8 n=${#DASHY_SEQ}
+    DASHY_FRAME=$(( DASHY_FRAME % n ))
+    [ "$ESTADO_GLOBAL" -eq 1 ] && cada=4
+    [ "$ESTADO_GLOBAL" -eq 2 ] && cada=3
     [ "$ESTADO_GLOBAL" -eq 3 ] && cada=1
     ANIM_TICK=$(( ANIM_TICK + 1 ))
     if [ $(( ANIM_TICK % cada )) -eq 0 ]; then
-        DASHY_FRAME=$(( (DASHY_FRAME + 1) % 4 ))
+        DASHY_FRAME=$(( (DASHY_FRAME + 1) % n ))
     fi
 }
 
 # dashy_line_var <linea 0..5> -> bloque de 12 columnas en LINEA_DASHY
 dashy_line_var() {
-    local idx="$1" art speed="" sweat=" " pos ojos="o o" boca="w"
-    art="${DASHY[$((DASHY_FRAME * 6 + idx))]}"
+    local idx="$1" art speed="  " sweat=" " frame pos ojos="o o" boca="w"
+    frame="${DASHY_SEQ:$(( DASHY_FRAME % ${#DASHY_SEQ} )):1}"
+    art="${DASHY[$(( frame * 6 + idx ))]}"
 
-    # La cara cuenta el estado: tranquilo, concentrado o en pánico
-    [ "$ESTADO_GLOBAL" -eq 2 ] && { ojos="O O"; boca="-"; }
-    [ "$ESTADO_GLOBAL" -eq 3 ] && { ojos="> <"; boca="O"; }
+    # La cara cuenta el estado: dormido, contento, preocupado o en pánico
+    case "$ESTADO_GLOBAL" in
+        0) ojos="- -"; boca="w" ;;
+        1) ojos="o o"; boca="w" ;;
+        2) ojos="O O"; boca="-" ;;
+        3) ojos="> <"; boca="O" ;;
+    esac
+    # Un parpadeo de vez en cuando (y en calma abre un ojo para cotillear)
+    if [ "$ESTADO_GLOBAL" -eq 1 ] && [ $(( ANIM_TICK % 16 )) -eq 0 ]; then
+        ojos="- -"
+    elif [ "$ESTADO_GLOBAL" -eq 0 ] && [ $(( ANIM_TICK % 40 )) -eq 0 ]; then
+        ojos="o -"
+    fi
     art="${art/o o/$ojos}"
     art="${art/w/$boca}"
 
-    if [ "$ESTADO_GLOBAL" -ge 1 ]; then
+    # Columna izquierda (2 celdas): líneas de velocidad si hay jaleo
+    if [ "$ESTADO_GLOBAL" -ge 2 ]; then
         case "$idx" in
-            2|3) speed="»" ;;
+            2|3) speed="»»" ;;
         esac
-        [ "$ESTADO_GLOBAL" -eq 3 ] && speed="»»"
+        [ "$ESTADO_GLOBAL" -eq 2 ] && speed="» "
     fi
-    printf -v speed '%-2s' "$speed"
 
-    if [ "$ESTADO_GLOBAL" -eq 3 ]; then
-        pos=$(( (ANIM_TICK / 2) % 4 ))
-        if [ "$idx" -eq "$pos" ]; then
-            sweat="'"
-        elif [ "$idx" -eq $((pos + 1)) ]; then
-            sweat=","
-        fi
-    fi
+    # Columna derecha (1 celda): Zzz, silbido, sudor o alarmas
+    case "$ESTADO_GLOBAL" in
+        0)  # roncando: una Zz sube desde la cabecera
+            pos=$(( 2 - (ANIM_TICK / 6) % 3 ))
+            [ "$idx" -eq "$pos" ] && sweat="Z"
+            [ "$idx" -eq $((pos + 1)) ] && sweat="z"
+            ;;
+        1)  # silbando mientras vigila
+            pos=$(( 2 - (ANIM_TICK / 8) % 3 ))
+            [ "$idx" -eq "$pos" ] && sweat="~"
+            ;;
+        2)  # gotitas de sudor y alguna duda
+            pos=$(( (ANIM_TICK / 3) % 6 ))
+            [ "$idx" -eq "$pos" ] && sweat="'"
+            [ "$idx" -eq $(( (pos + 3) % 6 )) ] && sweat="?"
+            ;;
+        3)  # sudor a chorros y signos de exclamación
+            pos=$(( (ANIM_TICK / 2) % 6 ))
+            [ "$idx" -eq "$pos" ] && sweat="'"
+            [ "$idx" -eq $(( (pos + 3) % 6 )) ] && sweat="!"
+            ;;
+    esac
 
     LINEA_DASHY="${COLOR_ESTADO}${speed}${RESET}${COLOR_ESTADO}${BOLD}${art}${RESET}${CIAN}${sweat}${RESET}"
 }

@@ -21,9 +21,11 @@ equipo.
   para que la subida de temperatura y carga se lea mejor.
 - **Porcentaje bien visible**: el valor de cada barra se muestra en negrita
   encima; `LOAD` ahora también se expresa como % de núcleos ocupados.
-- **Dashy, el bicho animado**: cuatro poses de rebote (normal, estirado,
-  antena ladeada y aplastado). En azul descansa, en verde trota, en naranja se
-  concentra y en rojo entra en pánico y suda.
+- **Dashy, el bicho animado**: seis poses (reposo, agachado, ladeado a ambos
+  lados, salto y aterrizaje aplastado). En azul duerme con sus `Zzz` y abre un
+  ojo de vez en cuando; en verde pasea y silba; en naranja se concentra, suda y
+  se pregunta qué pasa; en rojo entra en pánico y corre con líneas de
+  velocidad.
 - **Frases con humor**: Dashy va contando qué tal va el PC en gerundio
   (“Dashy está durmiendo una tranquila siesta”, “Dashy está rezando todas sus
   oraciones al kernel Linux”…). Cambian cada 8 segundos.
